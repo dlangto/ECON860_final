@@ -1,0 +1,36 @@
+import pandas
+from factor_analyzer import FactorAnalyzer
+
+from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity
+import numpy
+
+dataset = pandas.read_csv("dataset_final.csv")
+print(dataset)
+
+chi2, p=calculate_bartlett_sphericity(dataset)
+print(chi2, p)
+
+machine = FactorAnalyzer(n_factors=25, rotation=None)
+#try 25 first because that is all the columns
+machine.fit(dataset)
+ev, v = machine.get_eigenvalues()
+print(ev)
+#if eigen value is bigger than 1, there is an important factor under that question, so this says the first 6 questions are good, so n_factors should equal 6
+
+machine = FactorAnalyzer(n_factors=5, rotation=None)
+machine.fit(dataset)
+output=machine.loadings_
+print(output)
+#try again with the 5 we got from above, the rows show how related the question is to which personality. Each column represents a personality
+#a high number in each column means that question is really important. High number means high correllation. We want each question to only correspond to one personality
+#this would make a question is only high in one column, the rest are close to zero. 
+machine = FactorAnalyzer(n_factors=5, rotation='varimax')
+machine.fit(dataset)
+factor_loadings=machine.loadings_
+print(factor_loadings)
+
+#we need to multiply the dataset with the output to get the personality of them using a matrix multiplier
+dataset = dataset.values
+
+results = numpy.dot(dataset, factor_loadings)
+pandas.DataFrame(results).round().to_csv("FactorAmalysis.csv", index=False)
